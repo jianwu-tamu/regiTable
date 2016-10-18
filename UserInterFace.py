@@ -14,9 +14,10 @@ import serial
 import Queue
 import struct
 import tkMessageBox
+import ttk
 
 WATCH_NUM = 5
-DEF_MACADDR = ['2KTR', '2MJS', '2KZ8', '2VN8', '2KMX']
+DEF_MACADDR = ['2KTR', '2KZ8', '2KZ9', '2MJS', '2KTM']
 
 class reg_UI:
 
@@ -32,10 +33,13 @@ class reg_UI:
         self.table = RegTable(WATCH_NUM)
         self.lock = thread.allocate_lock()
 
-        # Start to transfer pair information to another PC.
-        self.UDP_IP_second = '192.168.0.113'
-        self.UDP_PORT_second = 4569
+        # Start to transfer pair information to Presentation PC.
+        self.IP_presentation = '192.168.0.113'
+        self.PORT_to_presentation = 4569
         self.sock2 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.battery_table = {}
+        for i in range(len(DEF_MACADDR)):
+            self.battery_table[DEF_MACADDR[i]] = ("99%", "yes")
 
 
     def processIncoming(self):
@@ -55,14 +59,14 @@ class reg_UI:
                             if (len(self.table.regTable) > 0):
                                 strsend = str(self.table.regTable)
                                 print 1,strsend
-                                self.sock2.sendto(strsend, (self.UDP_IP_second, self.UDP_PORT_second))
+                                self.sock2.sendto(strsend, (self.IP_presentation, self.PORT_to_presentation))
                         elif ((len(self.table.regTable) == WATCH_NUM) and ((DEF_MACADDR[i] not in self.table.regTable.keys()) or (self.table.regTable[DEF_MACADDR[i]] == " "))):
                             self.table.update_table1(reg_UI2.name, DEF_MACADDR[i])
                             tkMessageBox.showinfo('confirmation','%s is paired with %s' % (reg_UI2.name, DEF_MACADDR[i]))
                             reg_UI2.pair_status = False
                             strsend = str(self.table.regTable)
                             print 2,strsend
-                            self.sock2.sendto(strsend, (self.UDP_IP_second, self.UDP_PORT_second))
+                            self.sock2.sendto(strsend, (self.IP_presentation, self.PORT_to_presentation))
 
         elif (reg_UI2.pair_status == False):
             cov_array = [0 for x in range(WATCH_NUM)]
@@ -81,18 +85,26 @@ class reg_UI:
             max_index = cov_array.index(max_value)
             twolargest = heapq.nlargest(2, cov_array)
             #print max_value
-            if ((max_value > 0.9) and (abs(twolargest[0] - twolargest[1]) > 0.05)):
+            if ((max_value > 0.9) and (abs(twolargest[0] - twolargest[1]) > 0.3)):
                 name = self.table.regTable[DEF_MACADDR[max_index]]
                 if (name == " "):
                     return
                 self.table.unpair(DEF_MACADDR[max_index])
-                self.sock2.sendto(str(self.table.regTable), (self.UDP_IP_second, self.UDP_PORT_second))
+                self.sock2.sendto(str(self.table.regTable), (self.IP_presentation, self.PORT_to_presentation))
                 tkMessageBox.showinfo('confirmation', '%s is unpaired with %s' % (name, DEF_MACADDR[max_index]))
 
     def pop_window(self, name):
         self.window = tk.Toplevel(self.master)
         self.app = reg_UI2(self.window, name)
 
+    def create_battery_table(self, battery_table):
+        self.window = tk.Toplevel(self.master)
+        self.battery_gui = battery_UI(self.window, battery_table)
+
+    def update_battery_table(self, watch_id, battery_status, health_status):
+        self.battery_gui.update(watch_id, battery_status, health_status)
+
+## This class pop up a new window that confirm the registration information.
 class reg_UI2:
 
     pair_status = False
@@ -109,9 +121,6 @@ class reg_UI2:
         self.confirm_button.bind('<Button-1>', self.update_table)
         self.cancel_button = tk.Button(self.master, text="cancel", command=self.close_windows, width=20)
         self.cancel_button.pack()
-        # result = tkMessageBox.askyesno("confirmation", "You are registrating as " + name)
-        # if result:
-        #    self.update_table(None)
 
     def close_windows(self):
         self.master.destroy()
@@ -122,11 +131,31 @@ class reg_UI2:
         self.master.destroy()
         return
 
+class battery_UI:
+    def __init__(self, master, battery_table):
+        self.battery_table = battery_table
+        self.master = master
+
+        self.tree = ttk.Treeview(self.master, show="headings")
+        self.tree["columns"] = ("one", "two", "three")
+        self.tree.column("one", width=200, anchor='center')
+        self.tree.column("two", width=200, anchor='center')
+        self.tree.column("three", width=200, anchor='center')
+        self.tree.heading("one", text="Watch ID")
+        self.tree.heading("two", text="Battery Life Remaining")
+        self.tree.heading("three", text="Health Status")
+        for key, value in self.battery_table.iteritems():
+            self.tree.insert('','end', (key, value[0], value[1]))
+
+    def update(self, watch_id, battery_status, health_status):
+        index = self.battery_table.keys().index(watch_id)
+        item = self.tree.get_children()
+        self.tree.set(item[index], ('one', 'two', 'three'), (watch_id, battery_status, health_status))
 
 class ThreadedClient:
 
     def __init__(self, master):
-        self.name_list = ["Jian", "William", "Peiming", "Viswam", "Bassem", "Ali A"]
+        self.name_list = ["Jian", "William", "Peiming", "Viswam", "Bassem", "Ali A", "Xien", "Ning", "Kim", "Zach"]
         self.master = master
         self.watch_queue = [collections.deque(maxlen=100) for x in range(WATCH_NUM)]
         self.motion_queue = collections.deque(maxlen=100)
@@ -173,6 +202,7 @@ class ThreadedClient:
                         self.lock.acquire()
                         self.watch_battery[i] = int(battery_life)
                         self.lock.release()
+                        self.gui.update_battery_table(parsed_data[0], battery_life, "yes")
 
 
     def read_motion(self):
