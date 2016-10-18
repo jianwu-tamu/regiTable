@@ -93,3 +93,6 @@ class reg_UI:
 
     def update_battery_table(self, watch_id, battery_status, health_status):
         self.battery_gui.update(watch_id, battery_status, health_status)
+
+    def update_battery_table(self, watch_id, health_status):
+        self.battery_gui.update(watch_id, health_status)

@@ -20,3 +20,8 @@ class battery_UI:
         index = self.battery_table.keys().index(watch_id)
         item = self.tree.get_children()
         self.tree.set(item[index], ('one', 'two', 'three'), (watch_id, battery_status, health_status))
+
+    def update(self, watch_id, health_status):
+        index = self.battery_table.keys().index(watch_id)
+        item = self.tree.get_children()
+        self.tree.set(item[index], 'three', health_status)
