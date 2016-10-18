@@ -7,6 +7,7 @@ import socket
 import numpy
 import heapq
 from reg_UI2 import reg_UI2
+from battery_UI import battery_UI
 
 WATCH_NUM = 5
 DEF_MACADDR = ['2KTR', '2KZ8', '2KZ9', '2MJS', '2KTM']
@@ -67,8 +68,6 @@ class reg_UI:
             MotionNet_gyro = self.motion_queue
             self.lock.release()
             for i in range(WATCH_NUM):
-                #print len(watch_gyro[i])
-                #print len(MotionNet_gyro)
                 if (len(watch_gyro[i]) == 100 and len(MotionNet_gyro) == 100):
                     watch_data = list(watch_gyro[i])
                     motion_data = list(MotionNet_gyro)
@@ -76,7 +75,6 @@ class reg_UI:
             max_value = max(cov_array)
             max_index = cov_array.index(max_value)
             twolargest = heapq.nlargest(2, cov_array)
-            #print max_value
             if ((max_value > 0.9) and (abs(twolargest[0] - twolargest[1]) > 0.3)):
                 name = self.table.regTable[DEF_MACADDR[max_index]]
                 if (name == " "):

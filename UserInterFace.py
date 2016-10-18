@@ -12,6 +12,7 @@ import serial
 import Queue
 import struct
 import threading
+from reg_UI import reg_UI
 
 WATCH_NUM = 5
 DEF_MACADDR = ['2KTR', '2KZ8', '2KZ9', '2MJS', '2KTM']
@@ -43,7 +44,17 @@ class ThreadedClient:
         self.periodicCall()
 
         # five timer to track the health status of watch
-        self.timers = [threading.Timer(3.0, timeout)]
+        self.timers = [threading.Timer(3.0, self.timeout, [DEF_MACADDR[i]]) for i in range(len(DEF_MACADDR))]
+        # every 25 sample (1s) to update Timer.
+        self.counter = [0 for i in range(WATCH_NUM)]
+
+    def timeout(self, watch_id):
+        self.gui.update_battery_table(watch_id, "no")
+        index = 0
+        for i in range(len(DEF_MACADDR)):
+            if watch_id == DEF_MACADDR[i]:
+                index = i
+        self.timers[index].cancel()
 
     def periodicCall(self):
         self.gui.processIncoming()
@@ -53,12 +64,23 @@ class ThreadedClient:
         while True:
             # packet format: str(device_id + " " + packet_type +  " " + gyro_mag)
             data, addr = self.sock.recvfrom(1024)
+
+            # start all five timers to monitor sensor data
+            for i in range(WATCH_NUM):
+                self.timers[i].start()
+
             #print data
             parsed_data = data.split(' ')
             if (parsed_data[1] == 'w'):
                 gyro_mag = float(parsed_data[2])
                 for i in range(WATCH_NUM):
                     if (parsed_data[0] == DEF_MACADDR[i]):
+                        self.counter[i] = self.counter[i] + 1
+                        if (self.counter[i] == 25):
+                            self.counter[i] = 0
+                            self.timers[i].cancel()
+                            self.timers[i] = threading.Timer(3.0, self.timeout, [parsed_data[0]])
+                            self.timers[i].start()
                         self.lock.acquire()
                         self.watch_queue[i].append(gyro_mag)
                         self.lock.release()
