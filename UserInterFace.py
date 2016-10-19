@@ -27,7 +27,7 @@ class ThreadedClient:
         self.gui = reg_UI(master, self.name_list, self.motion_queue, self.watch_queue)
 
         # Start smart watch server and start to receive data from all clients.
-        UDP_IP = '192.168.0.120'
+        UDP_IP = '192.168.0.129'
         UDP_PORT = 4570
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind((UDP_IP, UDP_PORT))
@@ -35,7 +35,7 @@ class ThreadedClient:
 
 
         # Start to receive data from MotionNet.
-        self.serial = serial.Serial("COM6", 115200, timeout=5)
+        self.serial = serial.Serial("COM3", 115200, timeout=5)
         self.data = [0 for x in range(50)]
         self.data_package = Queue.Queue(maxsize=50)
         self.parsed_data = [0 for x in range(6)]

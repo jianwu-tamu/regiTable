@@ -27,12 +27,15 @@ class reg_UI:
         self.lock = thread.allocate_lock()
 
         # Start to transfer pair information to Presentation PC.
-        self.IP_presentation = '192.168.0.113'
+        self.IP_presentation = '192.168.0.129'
         self.PORT_to_presentation = 4569
         self.sock2 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.battery_table = {}
         for i in range(len(DEF_MACADDR)):
             self.battery_table[DEF_MACADDR[i]] = ("99%", "yes")
+        print self.battery_table
+
+        self.create_battery_table(self.battery_table)
 
 
     def processIncoming(self):
