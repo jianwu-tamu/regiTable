@@ -27,10 +27,10 @@ class ThreadedClient:
         self.gui = reg_UI(master, self.name_list, self.motion_queue, self.watch_queue)
 
         # Start smart watch server and start to receive data from all clients.
-        UDP_IP = '192.168.0.129'
-        UDP_PORT = 4570
+        IP_local = '192.168.0.129'
+        PORT_from_presentation = 4566
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sock.bind((UDP_IP, UDP_PORT))
+        self.sock.bind((IP_local, PORT_from_presentation))
         thread.start_new_thread(self.read_watch, ())
 
 
