@@ -27,19 +27,18 @@ class reg_UI:
         self.lock = thread.allocate_lock()
 
         # Start to transfer pair information to Presentation PC.
-        self.IP_presentation = '192.168.0.109'
+        self.IP_presentation = '192.168.0.122'
         self.PORT_to_presentation = 4564
         self.sock2 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.battery_table = {}
         for i in range(len(DEF_MACADDR)):
             self.battery_table[DEF_MACADDR[i]] = ("99%", "yes")
-        print self.battery_table
 
         self.create_battery_table(self.battery_table)
 
 
     def processIncoming(self):
-        print reg_UI2.pair_status
+        #print reg_UI2.pair_status
         if (reg_UI2.pair_status == True):
             for i in range(WATCH_NUM):
                 if (len(self.watch_queue[i]) == 100):
@@ -94,8 +93,8 @@ class reg_UI:
         self.window = tk.Toplevel(self.master)
         self.battery_gui = battery_UI(self.window, battery_table)
 
-    def update_battery_table(self, watch_id, battery_status, health_status):
-        self.battery_gui.update(watch_id, battery_status, health_status)
+    def update_battery_status(self, watch_id, battery_status, health_status):
+        self.battery_gui.update_status(watch_id, battery_status, health_status)
 
-    def update_battery_table(self, watch_id, health_status):
-        self.battery_gui.update(watch_id, health_status)
+    def update_battery_health(self, watch_id, health_status):
+        self.battery_gui.update_health(watch_id, health_status)

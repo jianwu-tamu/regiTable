@@ -1,4 +1,6 @@
 import ttk
+import Tkinter as tk
+import thread
 
 class battery_UI:
     def __init__(self, master, battery_table):
@@ -14,20 +16,24 @@ class battery_UI:
         self.tree.heading("two", text="Battery Life Remaining")
         self.tree.heading("three", text="Health Status")
         self.tree.pack()
+        self.lock = thread.allocate_lock()
         for key, value in self.battery_table.iteritems():
-            print "insert tree"
             self.tree.insert('','end', values=(key, value[0], value[1]))
 
 
-    def update(self, watch_id, battery_status, health_status):
+    def update_status(self, watch_id, battery_status, health_status):
         index = self.battery_table.keys().index(watch_id)
+        self.lock.acquire()
         item = self.tree.get_children()
         self.tree.set(item[index], ('one', 'two', 'three'), (watch_id, battery_status, health_status))
+        self.lock.release()
 
-    def update(self, watch_id, health_status):
+    def update_health(self, watch_id, health_status):
         index = self.battery_table.keys().index(watch_id)
+        self.lock.acquire()
         item = self.tree.get_children()
         self.tree.set(item[index], 'three', health_status)
+        self.lock.release()
 
     def close_windows(self):
         self.master.destroy()

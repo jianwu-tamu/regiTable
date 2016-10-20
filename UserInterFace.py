@@ -13,6 +13,7 @@ import Queue
 import struct
 import threading
 from reg_UI import reg_UI
+from resettableTimer import ResettableTimer
 
 WATCH_NUM = 5
 DEF_MACADDR = ['2KTR', '2KZ8', '2KZ9', '2MJS', '2KTM']
@@ -26,13 +27,18 @@ class ThreadedClient:
         self.motion_queue = collections.deque(maxlen=100)
         self.gui = reg_UI(master, self.name_list, self.motion_queue, self.watch_queue)
 
+        # five timer to track the health status of watch
+        self.timers = [ResettableTimer(3.0, self.expire, DEF_MACADDR[i], inc=1) for i in range(len(DEF_MACADDR))]
+        self.counter = [0 for i in range(WATCH_NUM)]
+
+        self.lock = thread.allocate_lock()
+
         # Start smart watch server and start to receive data from all clients.
-        IP_local = '192.168.0.129'
-        PORT_from_presentation = 4566
+        IP_local = '192.168.0.123'
+        PORT_from_presentation = 4565
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind((IP_local, PORT_from_presentation))
         thread.start_new_thread(self.read_watch, ())
-
 
         # Start to receive data from MotionNet.
         self.serial = serial.Serial("COM3", 115200, timeout=5)
@@ -40,21 +46,12 @@ class ThreadedClient:
         self.data_package = Queue.Queue(maxsize=50)
         self.parsed_data = [0 for x in range(6)]
         thread.start_new_thread(self.read_motion, ())
-        self.lock = thread.allocate_lock()
         self.periodicCall()
 
-        # five timer to track the health status of watch
-        self.timers = [threading.Timer(3.0, self.timeout, [DEF_MACADDR[i]]) for i in range(len(DEF_MACADDR))]
-        # every 25 sample (1s) to update Timer.
-        self.counter = [0 for i in range(WATCH_NUM)]
 
-    def timeout(self, watch_id):
-        self.gui.update_battery_table(watch_id, "no")
-        index = 0
-        for i in range(len(DEF_MACADDR)):
-            if watch_id == DEF_MACADDR[i]:
-                index = i
-        self.timers[index].cancel()
+
+    def expire(self, watch_id):
+        self.gui.update_battery_health(watch_id, "no")
 
     def periodicCall(self):
         self.gui.processIncoming()
@@ -64,23 +61,19 @@ class ThreadedClient:
         while True:
             # packet format: str(device_id + " " + packet_type +  " " + gyro_mag)
             data, addr = self.sock.recvfrom(1024)
-
+            print data
             # start all five timers to monitor sensor data
-            for i in range(WATCH_NUM):
-                self.timers[i].start()
-
-            #print data
             parsed_data = data.split(' ')
             if (parsed_data[1] == 'w'):
                 gyro_mag = float(parsed_data[2])
                 for i in range(WATCH_NUM):
                     if (parsed_data[0] == DEF_MACADDR[i]):
+                        if not self.timers[i].started:
+                            self.timers[i].started = True
                         self.counter[i] = self.counter[i] + 1
-                        if (self.counter[i] == 25):
+                        if self.counter[i] == 25:
                             self.counter[i] = 0
-                            self.timers[i].cancel()
-                            self.timers[i] = threading.Timer(3.0, self.timeout, [parsed_data[0]])
-                            self.timers[i].start()
+                            self.timers[i].reset()
                         self.lock.acquire()
                         self.watch_queue[i].append(gyro_mag)
                         self.lock.release()
@@ -88,10 +81,7 @@ class ThreadedClient:
                 battery_life = parsed_data[2]
                 for i in range(WATCH_NUM):
                     if (parsed_data[0] == DEF_MACADDR[i]):
-                        self.lock.acquire()
-                        self.watch_battery[i] = int(battery_life)
-                        self.lock.release()
-                        self.gui.update_battery_table(parsed_data[0], battery_life, "yes")
+                        self.gui.update_battery_status(parsed_data[0], battery_life, "yes")
 
 
     def read_motion(self):
