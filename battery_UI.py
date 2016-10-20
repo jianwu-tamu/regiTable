@@ -25,14 +25,15 @@ class battery_UI:
         index = self.battery_table.keys().index(watch_id)
         self.lock.acquire()
         item = self.tree.get_children()
-        self.tree.set(item[index], ('one', 'two', 'three'), (watch_id, battery_status, health_status))
+        self.tree.set(item[index], column="two", value=battery_status)
+        self.tree.set(item[index], column="three", value=health_status)
         self.lock.release()
 
     def update_health(self, watch_id, health_status):
         index = self.battery_table.keys().index(watch_id)
         self.lock.acquire()
         item = self.tree.get_children()
-        self.tree.set(item[index], 'three', health_status)
+        self.tree.set(item[index], column="three", value=health_status)
         self.lock.release()
 
     def close_windows(self):

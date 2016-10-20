@@ -34,7 +34,8 @@ class reg_UI:
         for i in range(len(DEF_MACADDR)):
             self.battery_table[DEF_MACADDR[i]] = ("99%", "yes")
 
-        self.create_battery_table(self.battery_table)
+        self.window = tk.Toplevel(self.master)
+        self.battery_gui = battery_UI(self.window, self.battery_table)
 
 
     def processIncoming(self):
@@ -48,19 +49,21 @@ class reg_UI:
                     if (numpy.mean(watch_data) > 10):
                         if ((len(self.table.regTable) < WATCH_NUM) and ((DEF_MACADDR[i] not in self.table.regTable.keys()) or (self.table.regTable[DEF_MACADDR[i]] == " "))):
                             self.table.create_table(reg_UI2.name, DEF_MACADDR[i])
+                            paired_str = "p" + " " + reg_UI2.name + " " + DEF_MACADDR[i]
+                            self.sock2.sendto(paired_str, (self.IP_presentation, self.PORT_to_presentation))
                             tkMessageBox.showinfo('confirmation','%s is paired with %s' % (reg_UI2.name, DEF_MACADDR[i]))
-                            print reg_UI2.name
                             reg_UI2.pair_status = False
                             if (len(self.table.regTable) > 0):
                                 strsend = str(self.table.regTable)
-                                print 1,strsend
                                 self.sock2.sendto(strsend, (self.IP_presentation, self.PORT_to_presentation))
                         elif ((len(self.table.regTable) == WATCH_NUM) and ((DEF_MACADDR[i] not in self.table.regTable.keys()) or (self.table.regTable[DEF_MACADDR[i]] == " "))):
                             self.table.update_table1(reg_UI2.name, DEF_MACADDR[i])
+                            paired_str = "p" + " " + reg_UI2.name + " " + DEF_MACADDR[i]
+                            self.sock2.sendto(paired_str, (self.IP_presentation, self.PORT_to_presentation))
                             tkMessageBox.showinfo('confirmation','%s is paired with %s' % (reg_UI2.name, DEF_MACADDR[i]))
                             reg_UI2.pair_status = False
                             strsend = str(self.table.regTable)
-                            print 2,strsend
+                            # print 2,strsend
                             self.sock2.sendto(strsend, (self.IP_presentation, self.PORT_to_presentation))
 
         elif (reg_UI2.pair_status == False):
@@ -89,9 +92,9 @@ class reg_UI:
         self.window = tk.Toplevel(self.master)
         self.app = reg_UI2(self.window, name)
 
-    def create_battery_table(self, battery_table):
-        self.window = tk.Toplevel(self.master)
-        self.battery_gui = battery_UI(self.window, battery_table)
+    # def create_battery_table(self, battery_table):
+    #     self.window = tk.Toplevel(self.master)
+    #     self.battery_gui = battery_UI(self.window, battery_table)
 
     def update_battery_status(self, watch_id, battery_status, health_status):
         self.battery_gui.update_status(watch_id, battery_status, health_status)

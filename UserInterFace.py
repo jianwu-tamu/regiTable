@@ -59,9 +59,7 @@ class ThreadedClient:
 
     def read_watch(self):
         while True:
-            # packet format: str(device_id + " " + packet_type +  " " + gyro_mag)
             data, addr = self.sock.recvfrom(1024)
-            print data
             # start all five timers to monitor sensor data
             parsed_data = data.split(' ')
             if (parsed_data[1] == 'w'):
