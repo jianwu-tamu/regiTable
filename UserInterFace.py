@@ -34,7 +34,7 @@ class ThreadedClient:
         self.lock = thread.allocate_lock()
 
         # Start smart watch server and start to receive data from all clients.
-        IP_local = '192.168.0.123'
+        IP_local = '192.168.1.99'
         PORT_from_presentation = 4565
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind((IP_local, PORT_from_presentation))

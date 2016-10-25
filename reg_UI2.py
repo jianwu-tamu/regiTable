@@ -10,12 +10,12 @@ class reg_UI2:
         reg_UI2.name = name
         self.master = master
         var = "You are registrating as " + name
-        self.text = tk.Message(self.master, text=var, width=800)
+        self.text = tk.Message(self.master, text=var, width=800, font=("Arial",30,"bold"))
         self.text.pack()
-        self.confirm_button = tk.Button(self.master, text="confirm", width=20)
+        self.confirm_button = tk.Button(self.master, text="confirm", width=20, font=("Arial",30,"bold"))
         self.confirm_button.pack()
         self.confirm_button.bind('<Button-1>', self.update_table)
-        self.cancel_button = tk.Button(self.master, text="cancel", command=self.close_windows, width=20)
+        self.cancel_button = tk.Button(self.master, text="cancel", command=self.close_windows, width=20, font=("Arial",30,"bold"))
         self.cancel_button.pack()
 
     def close_windows(self):

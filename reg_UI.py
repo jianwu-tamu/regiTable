@@ -21,13 +21,13 @@ class reg_UI:
         master.title("TerraSwarm Registration")
         self.name_list = name_list
         for i in range(0, len(self.name_list)):
-            tk.Button(self.master, command=partial(self.pop_window, self.name_list[i]), text=self.name_list[i], height = 2, width=10, font=("Arial",30,"bold")).\
+            tk.Button(self.master, command=partial(self.pop_window, self.name_list[i]), text=self.name_list[i], height=2, width=10, font=("Arial",30,"bold")).\
                      grid(row=i / 2, column = i % 2, sticky=tk.N+tk.E+tk.S+tk.W, padx = 10, pady = 2)
         self.table = RegTable(WATCH_NUM)
         self.lock = thread.allocate_lock()
 
         # Start to transfer pair information to Presentation PC.
-        self.IP_presentation = '192.168.0.122'
+        self.IP_presentation = '192.168.1.100'
         self.PORT_to_presentation = 4564
         self.sock2 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.battery_table = {}
@@ -46,7 +46,7 @@ class reg_UI:
                     self.lock.acquire()
                     watch_data = list(self.watch_queue[i])
                     self.lock.release()
-                    if (numpy.mean(watch_data) > 10):
+                    if (numpy.mean(watch_data) > 5):
                         if ((len(self.table.regTable) < WATCH_NUM) and ((DEF_MACADDR[i] not in self.table.regTable.keys()) or (self.table.regTable[DEF_MACADDR[i]] == " "))):
                             self.table.create_table(reg_UI2.name, DEF_MACADDR[i])
                             paired_str = "p" + " " + reg_UI2.name + " " + DEF_MACADDR[i]
@@ -80,7 +80,7 @@ class reg_UI:
             max_value = max(cov_array)
             max_index = cov_array.index(max_value)
             twolargest = heapq.nlargest(2, cov_array)
-            if ((max_value > 0.9) and (abs(twolargest[0] - twolargest[1]) > 0.3)):
+            if ((max_value > 0.9) and (abs(twolargest[0] - twolargest[1]) > 0.4)):
                 name = self.table.regTable[DEF_MACADDR[max_index]]
                 if (name == " "):
                     return
